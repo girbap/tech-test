@@ -57,7 +57,7 @@ class CustomerControllerTest extends TestCase
         $response->assertSessionHasNoErrors();
     }
 
-    public function test_store_whenRequiredDataMissing_thenErrorReturned(): void
+    public function test_store_whenRequiredDataMissing_thenErrorsReturned(): void
     {
         // Arrange.
         $this->withExceptionHandling();
@@ -107,5 +107,29 @@ class CustomerControllerTest extends TestCase
             'date_of_birth'     => 'The date of birth field must be a date before today.',
             'marketing_consent' => 'The marketing consent field must be true or false.',
         ]);
+    }
+
+    public function test_store_whenErrorsReturned_thenErrorsDisplayed(): void
+    {
+        // Arrange.
+        $this->withExceptionHandling();
+
+        $data = [];
+
+        // Act.
+        $response = $this->followingRedirects()
+            ->from(route('customer.create'))
+            ->post(route('customer.store'), $data);
+
+        // Assert.
+        $response->assertViewIs('customer.create');
+
+        $response->assertSeeInOrder([
+            'name="first_name"',        '<div>The first name field is required.</div>',
+            'name="last_name"',         '<div>The last name field is required.</div>',
+            'name="email"',             '<div>The email field is required.</div>',
+            'name="phone"',             '<div>The phone field is required.</div>',
+            'name="date_of_birth"',     '<div>The date of birth field is required.</div>',
+        ], escape: false);
     }
 }
