@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\Route;
 
-// Your routes go here.
+Route::controller(CustomerController::class)->group(function () {
+    Route::get('/customer/create', 'create')
+        ->name('customer.create');
+});
