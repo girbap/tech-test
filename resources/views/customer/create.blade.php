@@ -1,6 +1,7 @@
 <h1>New customer form</h1>
 
 <form method="POST" action="{{ route('customer.store') }}">
+    @csrf
 
     <div>
         <label for="first_name">First name</label>
