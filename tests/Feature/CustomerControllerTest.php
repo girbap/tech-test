@@ -57,6 +57,37 @@ class CustomerControllerTest extends TestCase
         $response->assertSessionHasNoErrors();
     }
 
+    public function test_store_whenRequestAccepted_thenResultsPageShown(): void
+    {
+        // Arrange.
+        $data = [
+            'first_name'        => 'Aaron',
+            'last_name'         => 'Aaronson',
+            'email'             => 'aaron@email.com',
+            'phone'             => '+0123456789',
+            'date_of_birth'     => '2008-09-30',
+            'marketing_consent' => true,
+        ];
+
+        // Act.
+        $response = $this->from(route('customer.create'))
+            ->post(route('customer.store'), $data);
+
+        // Assert.
+        $response->assertSessionHasNoErrors();
+        $response->assertViewIs('customer.result');
+
+        $response->assertSeeInOrder([
+            'Your submission has been successful',
+            'First name',                    'Aaron',
+            'Last name',                     'Aaronson',
+            'Email',                         'aaron@email.com',
+            'Phone',                         '+0123456789',
+            'Date of birth',                 '2008-09-30',
+            'Receive marketing information', 'Yes',
+        ]);
+    }
+
     public function test_store_whenRequiredDataMissing_thenErrorsReturned(): void
     {
         // Arrange.

@@ -14,6 +14,9 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request): Renderable
     {
-        return view('customer.create');
+        $data = $request->validated();
+        $data['marketing_consent'] = $request->boolean('marketing_consent');
+
+        return view('customer.result', $data);
     }
 }
