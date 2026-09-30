@@ -4,9 +4,30 @@ namespace Tests\Unit;
 
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Http;
 
 class CustomerControllerTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Http::preventStrayRequests();
+    }
+
+    private function fakeApiResponse(): void
+    {
+        Http::fake([
+            config('services.webhook.url') => '',
+        ]);
+    }
+
+
+    // -------- //
+
+
     public function test_create_thenCreateFormShown(): void
     {
         // Arrange.
@@ -57,9 +78,74 @@ class CustomerControllerTest extends TestCase
         $response->assertSessionHasNoErrors();
     }
 
+    public function test_store_whenRequestAccepted_thenApiCallMade(): void
+    {
+        // Arrange.
+        $this->fakeApiResponse();
+
+        $data = [
+            'first_name'        => 'Aaron',
+            'last_name'         => 'Aaronson',
+            'email'             => 'aaron@email.com',
+            'phone'             => '+0123456789',
+            'date_of_birth'     => '2008-09-30',
+            'marketing_consent' => true,
+        ];
+
+        // Act.
+        $response = $this->from(route('customer.create'))
+            ->post(route('customer.store'), $data);
+
+        // Assert.
+        $response->assertSessionHasNoErrors();
+
+        Http::assertSent(function (Request $request) {
+            return $request->url() === config('services.webhook.url') &&
+                   $request['first_name'] === 'Aaron' &&
+                   $request['last_name'] === 'Aaronson' &&
+                   $request['email'] === 'aaron@email.com' &&
+                   $request['phone'] === '+0123456789' &&
+                   $request['date_of_birth'] === '2008-09-30' &&
+                   $request['marketing_consent'] === true;
+        });
+    }
+
+    public function test_store_whenMarketingConsentFieldMissing_thenApiCallMadeWithMarketingConsentFalse(): void
+    {
+        // Arrange.
+        $this->fakeApiResponse();
+
+        $data = [
+            'first_name'    => 'Aaron',
+            'last_name'     => 'Aaronson',
+            'email'         => 'aaron@email.com',
+            'phone'         => '+0123456789',
+            'date_of_birth' => '2008-09-30',
+        ];
+
+        // Act.
+        $response = $this->from(route('customer.create'))
+            ->post(route('customer.store'), $data);
+
+        // Assert.
+        $response->assertSessionHasNoErrors();
+
+        Http::assertSent(function (Request $request) {
+            return $request->url() === config('services.webhook.url') &&
+                   $request['first_name'] === 'Aaron' &&
+                   $request['last_name'] === 'Aaronson' &&
+                   $request['email'] === 'aaron@email.com' &&
+                   $request['phone'] === '+0123456789' &&
+                   $request['date_of_birth'] === '2008-09-30' &&
+                   $request['marketing_consent'] === false;
+        });
+    }
+
     public function test_store_whenRequestAccepted_thenResultsPageShown(): void
     {
         // Arrange.
+        $this->fakeApiResponse();
+
         $data = [
             'first_name'        => 'Aaron',
             'last_name'         => 'Aaronson',
