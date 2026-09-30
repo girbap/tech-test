@@ -305,4 +305,40 @@ class CustomerControllerTest extends TestCase
             'name="date_of_birth"',     '<div>The date of birth field is required.</div>',
         ], escape: false);
     }
+
+    public function test_store_whenErrorReturned_thenOldValuesShownInForm(): void
+    {
+        // Arrange.
+        $this->withExceptionHandling();
+
+        Http::fake([
+            '*' => Http::failedConnection(),
+        ]);
+
+        $data = [
+            'first_name'        => 'Aaron',
+            'last_name'         => 'Aaronson',
+            'email'             => 'aaron@email.com',
+            'phone'             => '+0123456789',
+            'date_of_birth'     => '2008-09-30',
+            'marketing_consent' => true,
+        ];
+
+        // Act.
+        $response = $this->followingRedirects()
+            ->from(route('customer.create'))
+            ->post(route('customer.store'), $data);
+
+        // Assert.
+        $response->assertViewIs('customer.create');
+
+        $response->assertSeeInOrder([
+            'name="first_name"',        'value="Aaron"',
+            'name="last_name"',         'value="Aaronson"',
+            'name="email"',             'value="aaron@email.com"',
+            'name="phone"',             'value="+0123456789"',
+            'name="date_of_birth"',     'value="2008-09-30"',
+            'name="marketing_consent"', 'value="1" checked',
+        ], escape: false);
+    }
 }
