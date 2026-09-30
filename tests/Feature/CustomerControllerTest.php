@@ -17,10 +17,10 @@ class CustomerControllerTest extends TestCase
         Http::preventStrayRequests();
     }
 
-    private function fakeApiResponse(): void
+    private function fakeApiResponse(int $status = Response::HTTP_OK, string $message = ''): void
     {
         Http::fake([
-            config('services.webhook.url') => '',
+            config('services.webhook.url') => Http::response($message, $status),
         ]);
     }
 
@@ -61,6 +61,8 @@ class CustomerControllerTest extends TestCase
     public function test_store_whenRequiredDataGiven_thenRequestAccepted(): void
     {
         // Arrange.
+        $this->fakeApiResponse();
+
         $data = [
             'first_name'        => 'Aaron',
             'last_name'         => 'Aaronson',
@@ -223,6 +225,60 @@ class CustomerControllerTest extends TestCase
             'phone'             => 'The phone field format is invalid.',
             'date_of_birth'     => 'The date of birth field must be a date before today.',
             'marketing_consent' => 'The marketing consent field must be true or false.',
+        ]);
+    }
+
+    public function test_store_whenApiReturnsBadRequestResponse_thenErrorsReturned(): void
+    {
+        // Arrange.
+        $this->fakeApiResponse(Response::HTTP_BAD_REQUEST, 'This request is not processable.');
+
+        $data = [
+            'first_name'        => 'Aaron',
+            'last_name'         => 'Aaronson',
+            'email'             => 'aaron@email.com',
+            'phone'             => '+0123456789',
+            'date_of_birth'     => '2008-09-30',
+            'marketing_consent' => true,
+        ];
+
+        // Act.
+        $response = $this->from(route('customer.create'))
+            ->post(route('customer.store'), $data);
+
+        // Assert.
+        $response->assertRedirect(route('customer.create'));
+        $response->assertSessionHasErrors([
+            'submission' => 'It was not possible to submit your details. Please try again.',
+        ]);
+    }
+
+    public function test_store_whenApiTimesOut_thenErrorReturned(): void
+    {
+        // Arrange.
+        $this->withExceptionHandling();
+
+        Http::fake([
+            '*' => Http::failedConnection(),
+        ]);
+
+        $data = [
+            'first_name'        => 'Aaron',
+            'last_name'         => 'Aaronson',
+            'email'             => 'aaron@email.com',
+            'phone'             => '+0123456789',
+            'date_of_birth'     => '2008-09-30',
+            'marketing_consent' => true,
+        ];
+
+        // Act.
+        $response = $this->from(route('customer.create'))
+            ->post(route('customer.store'), $data);
+
+        // Assert.
+        $response->assertRedirect(route('customer.create'));
+        $response->assertSessionHasErrors([
+            'submission' => 'It was not possible to submit your details. Please try again.',
         ]);
     }
 
