@@ -1,6 +1,6 @@
 <h1>New customer form</h1>
 
-<form>
+<form method="POST" action="{{ route('customer.store') }}">
 
     <div>
         <label for="first_name">First name</label>
@@ -32,4 +32,5 @@
         <label for="marketing_consent">Would you like to receive marketing correspondence?</label>
     </div>
 
+    <button type="submit">Submit</button>
 </form>
