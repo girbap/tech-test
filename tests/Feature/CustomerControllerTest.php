@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Feature;
 
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
 
 class CustomerControllerTest extends TestCase
 {
@@ -103,6 +103,7 @@ class CustomerControllerTest extends TestCase
 
         Http::assertSent(function (Request $request) {
             return $request->url() === config('services.webhook.url') &&
+                   $request->hasHeader('Authorization', 'Bearer ' . config('services.webhook.token')) &&
                    $request['first_name'] === 'Aaron' &&
                    $request['last_name'] === 'Aaronson' &&
                    $request['email'] === 'aaron@email.com' &&
@@ -134,6 +135,7 @@ class CustomerControllerTest extends TestCase
 
         Http::assertSent(function (Request $request) {
             return $request->url() === config('services.webhook.url') &&
+                   $request->hasHeader('Authorization', 'Bearer ' . config('services.webhook.token')) &&
                    $request['first_name'] === 'Aaron' &&
                    $request['last_name'] === 'Aaronson' &&
                    $request['email'] === 'aaron@email.com' &&
